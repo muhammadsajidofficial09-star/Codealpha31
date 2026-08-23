@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaMind — Smart FAQ Chatbot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg-primary: #0c0f14;
+    --bg-secondary: #141820;
+    --bg-tertiary: #1a1f2b;
+    --bg-card: #1e2433;
+    --fg-primary: #e8ecf4;
+    --fg-secondary: #8b95a8;
+    --fg-muted: #555f73;
+    --accent: #e8a435;
+    --accent-dim: rgba(232, 164, 53, 0.12);
+    --accent-glow: rgba(232, 164, 53, 0.25);
+    --user-bubble: #2a3548;
+    --bot-bubble: #1a2030;
+    --border: rgba(255,255,255,0.06);
+    --success: #34d399;
+    --danger: #f87171;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg-primary);
+    color: var(--fg-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated background */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .bg-layer .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: orbFloat 20s ease-in-out infinite alternate;
+  }
+  .bg-layer .orb:nth-child(1) {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(232,164,53,0.35), transparent 70%);
+    top: -10%; left: -10%;
+    animation-duration: 25s;
+  }
+  .bg-layer .orb:nth-child(2) {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(53,164,232,0.2), transparent 70%);
+    bottom: -15%; right: -5%;
+    animation-duration: 30s;
+    animation-delay: -5s;
+  }
+  .bg-layer .orb:nth-child(3) {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(232,53,120,0.15), transparent 70%);
+    top: 50%; left: 60%;
+    animation-duration: 22s;
+    animation-delay: -10s;
+  }
+  @keyframes orbFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.1); }
+    66% { transform: translate(-20px, 40px) scale(0.95); }
+    100% { transform: translate(30px, 20px) scale(1.05); }
+  }
+
+  /* Grid pattern overlay */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Main container */
+  .app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 860px;
+    height: 96vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 25px 80px rgba(0,0,0,0.5),
+      0 0 120px rgba(232,164,53,0.05);
+  }
+
+  /* Header */
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 24px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .bot-avatar {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #d4872a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--bg-primary);
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    position: relative;
+  }
+  .bot-avatar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 14px; height: 14px;
+    background: var(--success);
+    border: 2.5px solid var(--bg-tertiary);
+    border-radius: 50%;
+  }
+  .header-info { flex: 1; }
+  .header-info h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+  .header-info .status {
+    font-size: 12px;
+    color: var(--success);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .header-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .header-btn {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .header-btn:hover {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(232,164,53,0.2);
+  }
+
+  /* Topic tags bar */
+  .topic-bar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .topic-bar::-webkit-scrollbar { display: none; }
+  .topic-tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.25s;
+  }
+  .topic-tag:hover, .topic-tag.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(232,164,53,0.3);
+  }
+
+  /* Messages area */
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg-muted) transparent;
+  }
+  .messages-area::-webkit-scrollbar { width: 5px; }
+  .messages-area::-webkit-scrollbar-track { background: transparent; }
+  .messages-area::-webkit-scrollbar-thumb {
+    background: var(--fg-muted);
+    border-radius: 10px;
+  }
+
+  /* Message bubbles */
+  .message {
+    display: flex;
+    gap: 10px;
+    max-width: 82%;
+    animation: msgIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .message.bot .msg-avatar {
+    background: linear-gradient(135deg, var(--accent), #d4872a);
+    color: var(--bg-primary);
+  }
+  .message.user .msg-avatar {
+    background: var(--user-bubble);
+    color: var(--fg-secondary);
+  }
+  .msg-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .msg-bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.65;
+    letter-spacing: -0.1px;
+  }
+  .message.bot .msg-bubble {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--fg-primary);
+  }
+  .message.user .msg-bubble {
+    background: linear-gradient(135deg, #2f3a50, #2a3344);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top-right-radius: 4px;
+    color: var(--fg-primary);
+  }
+  .msg-meta {
+    font-size: 11px;
+    color: var(--fg-muted);
+    padding: 0 4px;
+  }
+  .message.user .msg-meta { text-align: right; }
+
+  /* Confidence badge */
+  .confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .confidence-high {
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--success);
+  }
+  .confidence-med {
+    background: rgba(232, 164, 53, 0.1);
+    color: var(--accent);
+  }
+  .confidence-low {
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--danger);
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    max-width: 82%;
+    animation: msgIn 0.3s ease both;
+  }
+  .typing-indicator.visible { display: flex; }
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 14px 18px;
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-top-left-radius: 4px;
+  }
+  .typing-dots span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--fg-muted);
+    animation: dotBounce 1.4s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Suggestions chips */
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 24px 12px;
+    flex-shrink: 0;
+  }
+  .suggestion-chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    transition: all 0.25s;
+    white-space: nowrap;
+  }
+  .suggestion-chip:hover {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(232,164,53,0.3);
+    transform: translateY(-1px);
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    flex-shrink: 0;
+  }
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 6px 6px 6px 18px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .input-wrapper:focus-within {
+    border-color: rgba(232,164,53,0.35);
+    box-shadow: 0 0 0 3px var(--accent-dim), 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--fg-primary);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    outline: none;
+    min-width: 0;
+  }
+  .input-wrapper input::placeholder { color: var(--fg-muted); }
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #d4872a);
+    color: var(--bg-primary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .input-hint {
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* NLP debug panel */
+  .debug-panel {
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 340px;
+    max-height: 80vh;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    z-index: 100;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg-muted) transparent;
+  }
+  .debug-panel.visible { display: block; animation: msgIn 0.3s ease both; }
+  .debug-panel h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .debug-section {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .debug-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .debug-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--fg-muted);
+    margin-bottom: 6px;
+  }
+  .debug-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .debug-token {
+    padding: 2px 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    color: var(--fg-secondary);
+  }
+  .debug-token.removed {
+    text-decoration: line-through;
+    opacity: 0.35;
+    color: var(--danger);
+  }
+  .debug-score-bar {
+    height: 6px;
+    background: var(--bg-primary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .debug-score-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .debug-close {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+  }
+  .debug-close:hover { color: var(--fg-primary); }
+
+  /* Welcome message styling */
+  .welcome-section {
+    text-align: center;
+    padding: 30px 20px 10px;
+    animation: msgIn 0.5s ease both;
+  }
+  .welcome-icon {
+    width: 60px; height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--accent), #d4872a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: var(--bg-primary);
+    box-shadow: 0 8px 30px var(--accent-glow);
+  }
+  .welcome-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .welcome-section p {
+    font-size: 13px;
+    color: var(--fg-secondary);
+    line-height: 1.5;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--fg-primary);
+    z-index: 200;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .app-container {
+      height: 100vh;
+      border-radius: 0;
+      max-width: 100%;
+    }
+    .debug-panel { width: calc(100vw - 40px); right: 20px; }
+    .message { max-width: 90%; }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-layer">
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- Main app -->
+<div class="app-container">
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="bot-avatar"><i class="fas fa-brain"></i></div>
+    <div class="header-info">
+      <h1>NovaMind Assistant</h1>
+      <div class="status"><i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px;"></i>Online — NLP Engine Active</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="debugToggle" title="Toggle NLP Debug Panel" aria-label="Toggle debug panel">
+        <i class="fas fa-code"></i>
+      </button>
+      <button class="header-btn" id="clearChat" title="Clear conversation" aria-label="Clear chat">
+        <i class="fas fa-trash-can"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Topic quick filters -->
+  <nav class="topic-bar" aria-label="FAQ topics">
+    <button class="topic-tag active" data-topic="all">All Topics</button>
+    <button class="topic-tag" data-topic="setup">Setup</button>
+    <button class="topic-tag" data-topic="features">Features</button>
+    <button class="topic-tag" data-topic="troubleshooting">Troubleshooting</button>
+    <button class="topic-tag" data-topic="pricing">Pricing</button>
+    <button class="topic-tag" data-topic="privacy">Privacy</button>
+    <button class="topic-tag" data-topic="integration">Integrations</button>
+  </nav>
+
+  <!-- Messages -->
+  <main class="messages-area" id="messagesArea" aria-live="polite">
+    <div class="welcome-section" id="welcomeSection">
+      <div class="welcome-icon"><i class="fas fa-bolt"></i></div>
+      <h2>How can I help you today?</h2>
+      <p>I'm powered by a client-side NLP pipeline with TF-IDF vectorization and cosine similarity matching. Ask me anything about NovaMind.</p>
+    </div>
+  </main>
+
+  <!-- Typing indicator -->
+  <div class="typing-indicator" id="typingIndicator">
+    <div class="msg-avatar" style="background:linear-gradient(135deg,var(--accent),#d4872a);color:var(--bg-primary);width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
+      <i class="fas fa-brain"></i>
+    </div>
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Suggestions -->
+  <div class="suggestions" id="suggestionsArea">
+    <button class="suggestion-chip" data-q="How do I set up NovaMind?">How do I set up NovaMind?</button>
+    <button class="suggestion-chip" data-q="What features are included?">What features are included?</button>
+    <button class="suggestion-chip" data-q="Is my data safe with you?">Is my data safe?</button>
+    <button class="suggestion-chip" data-q="How much does it cost?">How much does it cost?</button>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-wrapper">
+      <input type="text" id="userInput" placeholder="Ask a question about NovaMind..." autocomplete="off" aria-label="Type your question">
+      <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
+        <i class="fas fa-arrow-up"></i>
+      </button>
+    </div>
+    <div class="input-hint">TF-IDF + Cosine Similarity &middot; Client-side NLP &middot; Zero API calls</div>
+  </div>
+</div>
+
+<!-- Debug panel -->
+<aside class="debug-panel" id="debugPanel" aria-label="NLP debug information">
+  <button class="debug-close" id="debugClose" aria-label="Close debug panel"><i class="fas fa-xmark"></i></button>
+  <h3><i class="fas fa-microscope"></i> NLP Pipeline Debug</h3>
+  <div id="debugContent"><div class="debug-label">Send a message to see the NLP pipeline in action.</div></div>
+</aside>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// FAQ DATASET — NovaMind Smart Product
+// ============================================================
+const faqData = [
+  {
+    id: 1,
+    topic: 'setup',
+    question: 'How do I set up NovaMind for the first time?',
+    answer: 'Download the NovaMind app from your device\'s app store, create an account with your email, and follow the onboarding wizard. It will guide you through connecting your devices, setting up rooms, and configuring your first automation. The entire process typically takes under 5 minutes.'
+  },
+  {
+    id: 2,
+    topic: 'setup',
+    question: 'What devices are compatible with NovaMind?',
+    answer: 'NovaMind supports over 5,000 smart devices including Philips Hue, Nest, Ring, Sonos, Ecobee, LIFX, Wemo, TP-Link Kasa, Samsung SmartThings, and any Zigbee or Z-Wave device. We also support Matter-enabled devices for future-proof compatibility.'
+  },
+  {
+    id: 3,
+    topic: 'setup',
+    question: 'Do I need a hub to use NovaMind?',
+    answer: 'No hub is required for Wi-Fi devices. However, for Zigbee and Z-Wave devices, you\'ll need a compatible dongle or hub. NovaMind works seamlessly with the SmartThings Hub, Hubitat, and our own NovaMind Bridge (sold separately for $49).'
+  },
+  {
+    id: 4,
+    topic: 'features',
+    question: 'What features are included in NovaMind?',
+    answer: 'NovaMind includes: voice control via built-in NLP, room-based device grouping, custom automation routines, energy monitoring dashboards, presence detection, scene management, scheduling, trigger-based actions (weather, time, sensor), a visual rule builder, and cross-device orchestration.'
+  },
+  {
+    id: 5,
+    topic: 'features',
+    question: 'Can NovaMind learn my habits automatically?',
+    answer: 'Yes. NovaMind\'s Adaptive Learning engine observes your patterns over 7-14 days and suggests automations. For example, if you consistently dim lights at 10 PM and lower the thermostat at 11 PM, NovaMind will propose a "Bedtime" routine. You can accept, modify, or dismiss any suggestion.'
+  },
+  {
+    id: 6,
+    topic: 'features',
+    question: 'Does NovaMind support voice commands?',
+    answer: 'Absolutely. NovaMind has a built-in voice engine that works offline for common commands. It also integrates with Alexa, Google Assistant, and Siri Shortcuts. You can say things like "Good morning" to trigger a scene, or "Make the living room cozy" to adjust multiple devices at once.'
+  },
+  {
+    id: 7,
+    topic: 'features',
+    question: 'How does the energy monitoring feature work?',
+    answer: 'NovaMind aggregates real-time power data from supported smart plugs, thermostats, and lights. It builds a per-device and per-room breakdown showing kWh consumption, cost estimates based on your utility rate, and historical trends. You can set budget alerts and get weekly efficiency reports.'
+  },
+  {
+    id: 8,
+    topic: 'troubleshooting',
+    question: 'My devices are not showing up in NovaMind. What should I do?',
+    answer: 'First, ensure all devices are on the same Wi-Fi network. Then try these steps: 1) Force-close and reopen NovaMind, 2) Go to Settings > Devices > Scan Again, 3) Restart your router, 4) Check that each device\'s own app shows it as online. If issues persist, enable debug logging in Settings > Advanced and contact support with the log file.'
+  },
+  {
+    id: 9,
+    topic: 'troubleshooting',
+    question: 'NovaMind is running slowly or freezing. How can I fix it?',
+    answer: 'Slow performance is usually caused by having too many active automations or a large device count on an older phone. Try: 1) Update to the latest app version, 2) Reduce concurrent automation triggers, 3) Clear the app cache in Settings > Storage, 4) On Android, enable "Light Mode" in Settings > Performance. For gateways with 100+ devices, consider using NovaMind Hub instead of the phone app.'
+  },
+  {
+    id: 10,
+    topic: 'troubleshooting',
+    question: 'Why are my automations not triggering correctly?',
+    answer: 'Check the automation\'s trigger conditions — ensure time zones are correct, sensor thresholds are properly set, and there are no conflicting automations. Go to Automation > Activity Log to see exactly why a trigger fired (or didn\'t). Common issues include: geofence radius too small, sunset/sunrise offset miscalibration, or a "delay" action preventing the next step.'
+  },
+  {
+    id: 11,
+    topic: 'troubleshooting',
+    question: 'How do I reset NovaMind to factory settings?',
+    answer: 'Go to Settings > System > Factory Reset. This will remove all devices, automations, and personal data from the app. Your physical devices will NOT be reset — they\'ll simply be disconnected. You can re-pair them after setting up NovaMind again. Note: this action cannot be undone, so export your automations first via Settings > Backup.'
+  },
+  {
+    id: 12,
+    topic: 'pricing',
+    question: 'How much does NovaMind cost?',
+    answer: 'NovaMind has a generous free tier supporting up to 15 devices and 5 automations. NovaMind Pro is $4.99/month (or $49.99/year) and unlocks unlimited devices, advanced analytics, adaptive learning, and priority support. NovaMind Business starts at $19.99/month for multi-location management and team features.'
+  },
+  {
+    id: 13,
+    topic: 'pricing',
+    question: 'Is there a free trial for NovaMind Pro?',
+    answer: 'Yes! Every new account gets a 30-day free trial of NovaMind Pro with full feature access. No credit card is required to start the trial. At the end of 30 days, you\'ll be moved to the free tier unless you choose to subscribe.'
+  },
+  {
+    id: 14,
+    topic: 'pricing',
+    question: 'Can I cancel my subscription at any time?',
+    answer: 'Absolutely. You can cancel from Settings > Subscription > Manage at any time. You\'ll retain Pro features until the end of your current billing period. We don\'t charge cancellation fees. If you paid annually, you can request a prorated refund within the first 60 days.'
+  },
+  {
+    id: 15,
+    topic: 'privacy',
+    question: 'Is my data safe with NovaMind?',
+    answer: 'Yes. NovaMind processes all automation logic locally on your device or gateway — your routines, device states, and voice commands never leave your home network by default. Cloud features (remote access, backup) use end-to-end encryption (AES-256). We never sell user data to third parties. We undergo annual SOC 2 Type II audits.'
+  },
+  {
+    id: 16,
+    topic: 'privacy',
+    question: 'Does NovaMind listen to my conversations?',
+    answer: 'No. NovaMind only processes audio when you actively use the wake word "Hey Nova" or tap the microphone button. Audio is processed on-device and immediately discarded — it is never recorded, stored, or transmitted to our servers. You can verify this in Settings > Privacy > Voice Data, which shows a real-time indicator when audio is being processed.'
+  },
+  {
+    id: 17,
+    topic: 'privacy',
+    question: 'Where is my data stored if I use cloud backup?',
+    answer: 'Cloud backups are stored in AWS datacenters in the region you select (US, EU, or Asia-Pacific). Backups are encrypted with a key derived from your account password — we cannot read your data. You can delete all cloud data at any time from Settings > Privacy > Delete Cloud Data, which removes everything within 24 hours per our data retention policy.'
+  },
+  {
+    id: 18,
+    topic: 'integration',
+    question: 'Does NovaMind work with Alexa or Google Home?',
+    answer: 'Yes. NovaMind integrates natively with both Amazon Alexa and Google Home. Enable the skill/action in the respective app, link your NovaMind account, and all your devices and scenes will appear. You can use either assistant interchangeably — saying "Alexa, activate Movie Night" triggers the same NovaMind scene as "Hey Google, activate Movie Night."'
+  },
+  {
+    id: 19,
+    topic: 'integration',
+    question: 'Can I integrate NovaMind with Home Assistant?',
+    answer: 'Yes. NovaMind has an official Home Assistant integration available via HACS. It exposes all NovaMind devices as HA entities and syncs automations bidirectionally. Setup involves installing the custom component, adding your NovaMind API token in the HA integration config, and selecting which devices to sync.'
+  },
+  {
+    id: 20,
+    topic: 'integration',
+    question: 'Does NovaMind support IFTTT or Zapier?',
+    answer: 'NovaMind supports IFTTT through the official NovaMind service on the IFTTT platform, with triggers like "Device state changed" and "Automation completed," and actions like "Trigger scene" and "Set device state." Zapier integration is available on Pro and Business plans via our webhook API, enabling connections to 5,000+ apps.'
+  },
+  {
+    id: 21,
+    topic: 'integration',
+    question: 'Can I control NovaMind from my Apple Watch?',
+    answer: 'Yes. The NovaMind watchOS app lets you trigger scenes, toggle devices, and view room status from your wrist. It supports complications for quick access to your most-used scenes and haptic feedback for confirmations. Requires watchOS 9.0 or later and NovaMind Pro.'
+  },
+  {
+    id: 22,
+    topic: 'features',
+    question: 'What is the visual rule builder?',
+    answer: 'The visual rule builder is a drag-and-drop interface for creating automations without code. You add trigger blocks (e.g., "When motion detected"), condition blocks (e.g., "If time is after sunset"), and action blocks (e.g., "Turn on lights to 70%"), then connect them in a flow. It supports branching logic, delays, and loops.'
+  },
+  {
+    id: 23,
+    topic: 'setup',
+    question: 'How do I add a new room in NovaMind?',
+    answer: 'Go to the Rooms tab, tap the "+" button, enter a room name (e.g., "Kitchen"), and optionally assign an icon and wallpaper. Then drag devices from your unassigned list into the room. You can create sub-zones within a room (e.g., "Kitchen Counter" vs "Kitchen Dining") for finer control.'
+  },
+  {
+    id: 24,
+    topic: 'troubleshooting',
+    question: 'Why is my NovaMind hub offline?',
+    answer: 'If your NovaMind Bridge shows as offline: 1) Check that it\'s powered on (solid amber LED = booting, solid green = connected), 2) Ensure it\'s within range of your Wi-Fi router, 3) Try power-cycling it (unplug for 10 seconds, then replug), 4) If the LED is flashing red, perform a firmware update via USB-C. If problems persist, the hub may have a hardware issue — contact support for a replacement under warranty.'
+  },
+  {
+    id: 25,
+    topic: 'pricing',
+    question: 'Do you offer discounts for students or non-profits?',
+    answer: 'Yes. Students with a valid .edu email get 50% off NovaMind Pro. Registered non-profits qualify for a free Business license for up to 3 locations. Apply through Settings > Subscription > Special Programs with your verification documents. Approval typically takes 1-2 business days.'
+  }
+];
+
+// ============================================================
+// NLP PIPELINE — Tokenization, Cleaning, Stemming, TF-IDF
+// ============================================================
+
+// English stop words
+const STOP_WORDS = new Set([
+  'i','me','my','myself','we','our','ours','ourselves','you','your','yours',
+  'yourself','yourselves','he','him','his','himself','she','her','hers',
+  'herself','it','its','itself','they','them','their','theirs','themselves',
+  'what','which','who','whom','this','that','these','those','am','is','are',
+  'was','were','be','been','being','have','has','had','having','do','does',
+  'did','doing','a','an','the','and','but','if','or','because','as','until',
+  'while','of','at','by','for','with','about','against','between','through',
+  'during','before','after','above','below','to','from','up','down','in',
+  'out','on','off','over','under','again','further','then','once','here',
+  'there','when','where','why','how','all','both','each','few','more','most',
+  'other','some','such','no','nor','not','only','own','same','so','than',
+  'too','very','s','t','can','will','just','don','should','now','d','ll',
+  'm','o','re','ve','y','ain','aren','couldn','didn','doesn','hadn','hasn',
+  'haven','isn','ma','mightn','mustn','needn','shan','shouldn','wasn',
+  'weren','won','wouldn','also','would','could','may','might','shall','must'
+]);
+
+// Simple Porter Stemmer implementation
+function stemWord(word) {
+  if (word.length <= 2) return word;
+  let w = word.toLowerCase();
+
+  // Step 1a
+  if (w.endsWith('sses')) w = w.slice(0, -2);
+  else if (w.endsWith('ies')) w = w.slice(0, -2);
+  else if (w.endsWith('ss')) { /* no change */ }
+  else if (w.endsWith('s')) w = w.slice(0, -1);
+
+  // Step 1b
+  if (w.endsWith('eed')) {
+    const stem = w.slice(0, -3);
+    if (countConsonants(stem) > 0) w = stem + 'ee';
+  } else if (w.endsWith('ed') && hasVowel(w.slice(0, -2))) {
+    w = w.slice(0, -2);
+    w = stripSuffix1b(w);
+  } else if (w.endsWith('ing') && hasVowel(w.slice(0, -3))) {
+    w = w.slice(0, -3);
+    w = stripSuffix1b(w);
+  }
+
+  // Step 1c
+  if (w.endsWith('y') && hasVowel(w.slice(0, -1))) w = w.slice(0, -1) + 'i';
+
+  // Step 2 — common suffix replacements
+  const step2 = [
+    ['ational', 'ate'], ['tional', 'tion'], ['enci', 'ence'], ['anci', 'ance'],
+    ['izer', 'ize'], ['abli', 'able'], ['alli', 'al'], ['entli', 'ent'],
+    ['eli', 'e'], ['ousli', 'ous'], ['ization', 'ize'], ['ation', 'ate'],
+    ['ator', 'ate'], ['alism', 'al'], ['iveness', 'ive'], ['fulness', 'ful'],
+    ['ousness', 'ous'], ['aliti', 'al'], ['iviti', 'ive'], ['biliti', 'ble']
+  ];
+  for (const [suffix, replacement] of step2) {
+    if (w.endsWith(suffix) && countConsonants(w.slice(0, -suffix.length)) > 0) {
+      w = w.slice(0, -suffix.length) + replacement;
+      break;
+    }
+  }
+
+  // Step 3
+  const step3 = [
+    ['icate', 'ic'], ['ative', ''], ['alize', 'al'],
+    ['iciti', 'ic'], ['ical', 'ic'], ['ful', ''], ['ness', '']
+  ];
+  for (const [suffix, replacement] of step3) {
+    if (w.endsWith(suffix) && countConsonants(w.slice(0, -suffix.length)) > 0) {
+      w = w.slice(0, -suffix.length) + replacement;
+      break;
+    }
+  }
+
+  return w;
+}
+
+function stripSuffix1b(w) {
+  if (w.endsWith('at') || w.endsWith('bl') || w.endsWith('iz')) return w + 'e';
+  const lastTwo = w.slice(-2);
+  if (lastTwo[0] === lastTwo[1] && !['l','s','z'].includes(lastTwo[0])) return w.slice(0, -1);
+  if (countConsonants(w) === 1 && !w.endsWith('w') && !w.endsWith('x') && !w.endsWith('y')) return w + 'e';
+  return w;
+}
+
+function hasVowel(str) {
+  return /[aeiouy]/i.test(str);
+}
+
+function countConsonants(str) {
+  let count = 0;
+  let prevVowel = false;
+  for (const ch of str.toLowerCase()) {
+    const isV = 'aeiou'.includes(ch);
+    if (!isV && ch >= 'a' && ch <= 'z') {
+      if (!prevVowel) count++;
+      prevVowel = false;
+    } else if (isV) {
+      prevVowel = true;
+    }
+  }
+  return count;
+}
+
+// Tokenize: lowercase, remove punctuation, split, remove stop words, stem
+function tokenize(text) {
+  const cleaned = text.toLowerCase().replace(/[^a-z0-9\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const rawTokens = cleaned.split(' ').filter(t => t.length > 0);
+  const tokens = [];
+  const removed = [];
+  for (const t of rawTokens) {
+    if (STOP_WORDS.has(t) || t.length < 2) {
+      removed.push(t);
+    } else {
+      tokens.push(stemWord(t));
+    }
+  }
+  return { tokens, removed, rawTokens };
+}
+
+// ============================================================
+// TF-IDF VECTORIZER
+// ============================================================
+class TFIDFVectorizer {
+  constructor() {
+    this.vocabulary = {};    // term -> index
+    this.idf = [];           // inverse document frequency per term
+    this.documents = [];     // stored token lists
+  }
+
+  // Build vocabulary and compute IDF from FAQ questions
+  fit(questions) {
+    const docFreq = {};  // how many docs contain each term
+    const allTerms = new Set();
+
+    for (const q of questions) {
+      const { tokens } = tokenize(q);
+      this.documents.push(tokens);
+      const uniqueTerms = new Set(tokens);
+      for (const t of uniqueTerms) {
+        docFreq[t] = (docFreq[t] || 0) + 1;
+      }
+      for (const t of tokens) allTerms.add(t);
+    }
+
+    // Build sorted vocabulary
+    const sortedTerms = [...allTerms].sort();
+    this.vocabulary = {};
+    sortedTerms.forEach((term, idx) => {
+      this.vocabulary[term] = idx;
+    });
+
+    // Compute IDF: log((N + 1) / (df + 1)) + 1 (smoothed)
+    const N = questions.length;
+    this.idf = new Array(sortedTerms.length).fill(0);
+    for (const [term, idx] of Object.entries(this.vocabulary)) {
+      const df = docFreq[term] || 0;
+      this.idf[idx] = Math.log((N + 1) / (df + 1)) + 1;
+    }
+  }
+
+  // Transform a single text into a TF-IDF vector
+  transform(text) {
+    const { tokens } = tokenize(text);
+    const vec = new Array(Object.keys(this.vocabulary).length).fill(0);
+
+    // Term frequency
+    const tf = {};
+    for (const t of tokens) {
+      tf[t] = (tf[t] || 0) + 1;
+    }
+    // Normalize TF
+    const maxTf = Math.max(1, ...Object.values(tf));
+    for (const [term, count] of Object.entries(tf)) {
+      const idx = this.vocabulary[term];
+      if (idx !== undefined) {
+        vec[idx] = (count / maxTf) * this.idf[idx];
+      }
+    }
+    return vec;
+  }
+
+  // Transform all fitted documents
+  transformAll() {
+    return this.documents.map((docTokens) => {
+      const vec = new Array(Object.keys(this.vocabulary).length).fill(0);
+      const tf = {};
+      for (const t of docTokens) tf[t] = (tf[t] || 0) + 1;
+      const maxTf = Math.max(1, ...Object.values(tf));
+      for (const [term, count] of Object.entries(tf)) {
+        const idx = this.vocabulary[term];
+        if (idx !== undefined) vec[idx] = (count / maxTf) * this.idf[idx];
+      }
+      return vec;
+    });
+  }
+}
+
+// ============================================================
+// COSINE SIMILARITY
+// ============================================================
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+// ============================================================
+// INITIALIZE NLP ENGINE
+// ============================================================
+const vectorizer = new TFIDFVectorizer();
+vectorizer.fit(faqData.map(f => f.question));
+const faqVectors = vectorizer.transformAll();
+
+// ============================================================
+// MATCHING FUNCTION
+// ============================================================
+function findBestMatch(userQuestion, topicFilter = 'all') {
+  const queryVec = vectorizer.transform(userQuestion);
+  let bestScore = -1;
+  let bestIdx = -1;
+  const scores = [];
+
+  for (let i = 0; i < faqData.length; i++) {
+    // Apply topic filter
+    if (topicFilter !== 'all' && faqData[i].topic !== topicFilter) {
+      scores.push({ idx: i, score: 0 });
+      continue;
+    }
+    const score = cosineSimilarity(queryVec, faqVectors[i]);
+    scores.push({ idx: i, score });
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+
+  // Sort scores descending for debug display
+  scores.sort((a, b) => b.score - a.score);
+
+  return {
+    faq: bestIdx >= 0 ? faqData[bestIdx] : null,
+    score: bestScore,
+    scores: scores.slice(0, 5),  // top 5 for debug
+    queryVec
+  };
+}
+
+// ============================================================
+// UI CONTROLLER
+// ============================================================
+const messagesArea = document.getElementById('messagesArea');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const typingIndicator = document.getElementById('typingIndicator');
+const suggestionsArea = document.getElementById('suggestionsArea');
+const welcomeSection = document.getElementById('welcomeSection');
+const debugPanel = document.getElementById('debugPanel');
+const debugContent = document.getElementById('debugContent');
+const toast = document.getElementById('toast');
+
+let activeTopic = 'all';
+let debugVisible = false;
+let isProcessing = false;
+
+// Enable/disable send button based on input
+userInput.addEventListener('input', () => {
+  sendBtn.disabled = userInput.value.trim().length === 0;
+});
+
+// Send on Enter
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !sendBtn.disabled && !isProcessing) {
+    handleSend();
+  }
+});
+
+sendBtn.addEventListener('click', handleSend);
+
+// Suggestion chips
+suggestionsArea.addEventListener('click', (e) => {
+  const chip = e.target.closest('.suggestion-chip');
+  if (chip) {
+    userInput.value = chip.dataset.q;
+    sendBtn.disabled = false;
+    handleSend();
+  }
+});
+
+// Topic filter
+document.querySelectorAll('.topic-tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.topic-tag').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    activeTopic = tag.dataset.topic;
+    showToast(`Filtered to: ${tag.textContent}`);
+  });
+});
+
+// Debug toggle
+document.getElementById('debugToggle').addEventListener('click', () => {
+  debugVisible = !debugVisible;
+  debugPanel.classList.toggle('visible', debugVisible);
+});
+document.getElementById('debugClose').addEventListener('click', () => {
+  debugVisible = false;
+  debugPanel.classList.remove('visible');
+});
+
+// Clear chat
+document.getElementById('clearChat').addEventListener('click', () => {
+  messagesArea.innerHTML = '';
+  welcomeSection.style.display = '';
+  messagesArea.appendChild(welcomeSection);
+  showToast('Conversation cleared');
+});
+
+function handleSend() {
+  const text = userInput.value.trim();
+  if (!text || isProcessing) return;
+  isProcessing = true;
+  sendBtn.disabled = true;
+  userInput.value = '';
+
+  // Hide welcome
+  if (welcomeSection.parentNode === messagesArea) {
+    welcomeSection.style.display = 'none';
+  }
+
+  // Add user message
+  addMessage('user', text);
+  scrollToBottom();
+
+  // Show typing indicator
+  typingIndicator.classList.add('visible');
+  scrollToBottom();
+
+  // Simulate processing delay for natural feel
+  const delay = 400 + Math.random() * 600;
+  setTimeout(() => {
+    typingIndicator.classList.remove('visible');
+
+    // Run NLP matching
+    const result = findBestMatch(text, activeTopic);
+    const { tokens, removed, rawTokens } = tokenize(text);
+
+    // Update debug panel
+    updateDebug(text, rawTokens, tokens, removed, result);
+
+    if (result.faq && result.score > 0.15) {
+      // Confidence class
+      let confClass = 'confidence-low';
+      let confLabel = 'Low';
+      if (result.score >= 0.5) { confClass = 'confidence-high'; confLabel = 'High'; }
+      else if (result.score >= 0.25) { confClass = 'confidence-med'; confLabel = 'Medium'; }
+
+      const answerHtml = `${result.faq.answer}
+        <span class="confidence-badge ${confClass}">
+          <i class="fas fa-signal"></i> ${confLabel} match: ${(result.score * 100).toFixed(1)}%
+          <span style="opacity:0.5;margin-left:4px;">| ${result.faq.topic}</span>
+        </span>`;
+
+      addMessage('bot', answerHtml);
+    } else {
+      addMessage('bot', `I couldn't find a closely matching FAQ for your question. Try rephrasing it, or explore one of the topic filters above to narrow down results. You can also try asking about <strong>setup</strong>, <strong>features</strong>, <strong>troubleshooting</strong>, <strong>pricing</strong>, <strong>privacy</strong>, or <strong>integrations</strong>.
+        <span class="confidence-badge confidence-low"><i class="fas fa-signal"></i> No match found (${(result.score * 100).toFixed(1)}%)</span>`);
+    }
+
+    scrollToBottom();
+    isProcessing = false;
+    sendBtn.disabled = userInput.value.trim().length === 0;
+    userInput.focus();
+  }, delay);
+}
+
+function addMessage(role, content) {
+  const msg = document.createElement('div');
+  msg.className = `message ${role}`;
+
+  const avatarIcon = role === 'bot' ? 'fa-brain' : 'fa-user';
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  msg.innerHTML = `
+    <div class="msg-avatar"><i class="fas ${avatarIcon}"></i></div>
+    <div class="msg-content">
+      <div class="msg-bubble">${content}</div>
+      <div class="msg-meta">${time}</div>
+    </div>
+  `;
+  messagesArea.appendChild(msg);
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+  });
+}
+
+function updateDebug(rawText, rawTokens, tokens, removed, result) {
+  const tokensHtml = rawTokens.map(t => {
+    const isRemoved = removed.includes(t);
+    const stemmed = isRemoved ? t : stemWord(t);
+    return `<span class="debug-token${isRemoved ? ' removed' : ''}" title="${isRemoved ? 'Stop word removed' : 'Stemmed: ' + stemmed}">${t}${!isRemoved ? ' → ' + stemmed : ''}</span>`;
+  }).join('');
+
+  const scoresHtml = result.scores.map(s => {
+    const pct = (s.score * 100).toFixed(1);
+    let color = '#f87171';
+    if (s.score >= 0.5) color = '#34d399';
+    else if (s.score >= 0.25) color = '#e8a435';
+    return `
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+          <span style="color:var(--fg-secondary);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${faqData[s.idx].question.slice(0, 50)}...</span>
+          <span style="color:${color};font-weight:500;">${pct}%</span>
+        </div>
+        <div class="debug-score-bar">
+          <div class="debug-score-fill" style="width:${pct}%;background:${color};"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const vocabSize = Object.keys(vectorizer.vocabulary).length;
+  const vecNonZero = result.queryVec.filter(v => v > 0).length;
+
+  debugContent.innerHTML = `
+    <div class="debug-section">
+      <div class="debug-label">Original Input</div>
+      <div style="color:var(--fg-primary);word-break:break-word;">${rawText}</div>
+    </div>
+    <div class="debug-section">
+      <div class="debug-label">Tokenization & Stemming (${tokens.length} kept, ${removed.length} removed)</div>
+      <div class="debug-tokens">${tokensHtml}</div>
+    </div>
+    <div class="debug-section">
+      <div class="debug-label">Vector Info</div>
+      <div style="color:var(--fg-secondary);">Vocabulary: ${vocabSize} terms | Non-zero dims: ${vecNonZero} | Topic filter: ${activeTopic}</div>
+    </div>
+    <div class="debug-section">
+      <div class="debug-label">Top 5 Cosine Similarity Scores</div>
+      ${scoresHtml}
+    </div>
+  `;
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// Focus input on load
+userInput.focus();
+</script>
+</body>
+</html>
