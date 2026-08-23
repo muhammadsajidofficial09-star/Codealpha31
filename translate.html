@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinguaFlow — Professional Translation Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,900;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --bg-primary: #0e0f11;
+    --bg-secondary: #16181c;
+    --bg-card: #1c1e24;
+    --bg-elevated: #22252c;
+    --border: #2a2d36;
+    --border-focus: #d4a24e;
+    --text-primary: #f0ece4;
+    --text-secondary: #9a9690;
+    --text-muted: #5c5955;
+    --accent: #d4a24e;
+    --accent-dim: rgba(212, 162, 78, 0.12);
+    --accent-glow: rgba(212, 162, 78, 0.25);
+    --success: #4ade80;
+    --error: #f87171;
+    --warning: #fbbf24;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow-lg: 0 16px 64px rgba(0,0,0,0.5);
+    --shadow-accent: 0 4px 24px rgba(212,162,78,0.15);
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Animated background */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .bg-blob {
+    position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.08;
+    animation: blobFloat 20s ease-in-out infinite alternate;
+  }
+  .bg-blob:nth-child(1) {
+    width: 600px; height: 600px; background: var(--accent);
+    top: -10%; left: -5%; animation-delay: 0s;
+  }
+  .bg-blob:nth-child(2) {
+    width: 500px; height: 500px; background: #e07c4e;
+    bottom: -15%; right: -10%; animation-delay: -7s; animation-duration: 25s;
+  }
+  .bg-blob:nth-child(3) {
+    width: 400px; height: 400px; background: #4ecbd4;
+    top: 40%; left: 50%; animation-delay: -14s; animation-duration: 30s; opacity: 0.04;
+  }
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(212,162,78,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,162,78,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  @keyframes blobFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.05); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+    100% { transform: translate(30px, -10px) scale(1.02); }
+  }
+
+  /* Layout */
+  .app-container {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto;
+    padding: 32px 24px 60px;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 32px; border-bottom: 1px solid var(--border);
+    margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
+  }
+  .logo-group { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 48px; height: 48px; border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--accent), #e8c17a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--bg-primary);
+    box-shadow: var(--shadow-accent);
+    position: relative; overflow: hidden;
+  }
+  .logo-icon::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+    animation: logoShine 3s ease-in-out infinite;
+  }
+  @keyframes logoShine {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+  }
+  .logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px;
+  }
+  .logo-text span { color: var(--accent); }
+  .logo-tagline {
+    font-size: 0.75rem; color: var(--text-muted); font-weight: 400;
+    letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+  }
+
+  .header-stats {
+    display: flex; gap: 24px; align-items: center;
+  }
+  .stat-item {
+    text-align: center; padding: 8px 16px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem; font-weight: 700; color: var(--accent);
+  }
+  .stat-label {
+    font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-top: 2px;
+  }
+
+  /* Language selector bar */
+  .lang-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .lang-select-wrapper {
+    flex: 1; min-width: 200px; position: relative;
+  }
+  .lang-select-wrapper label {
+    display: block; font-size: 0.7rem; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .lang-select {
+    width: 100%; padding: 14px 44px 14px 16px;
+    background: var(--bg-card); border: 1.5px solid var(--border);
+    border-radius: var(--radius-md); color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+    appearance: none; cursor: pointer;
+    transition: var(--transition);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a9690' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .lang-select:hover { border-color: var(--text-muted); }
+  .lang-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .lang-select option { background: var(--bg-card); color: var(--text-primary); padding: 8px; }
+
+  .swap-btn {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--bg-elevated); border: 1.5px solid var(--border);
+    color: var(--accent); font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); flex-shrink: 0; margin-top: 22px;
+    position: relative; overflow: hidden;
+  }
+  .swap-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent-dim); border-radius: 50%;
+    transform: scale(0); transition: var(--transition);
+  }
+  .swap-btn:hover::before { transform: scale(1); }
+  .swap-btn:hover { border-color: var(--accent); transform: rotate(180deg); box-shadow: var(--shadow-accent); }
+  .swap-btn:active { transform: rotate(180deg) scale(0.92); }
+  .swap-btn i { position: relative; z-index: 1; }
+
+  /* Translation panels */
+  .panels {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    margin-bottom: 20px; flex: 1;
+  }
+  @media (max-width: 768px) {
+    .panels { grid-template-columns: 1fr; }
+    .header-stats { display: none; }
+  }
+
+  .panel {
+    background: var(--bg-card); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: var(--transition);
+    min-height: 320px;
+  }
+  .panel:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .panel.output-panel { background: var(--bg-secondary); }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .panel-label {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-label .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); animation: dotPulse 2s ease-in-out infinite;
+  }
+  .panel-label .dot.idle { background: var(--text-muted); animation: none; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .panel-actions { display: flex; gap: 4px; }
+  .panel-action-btn {
+    width: 34px; height: 34px; border-radius: var(--radius-sm);
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-muted); font-size: 0.82rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+  .panel-action-btn:hover { background: var(--accent-dim); border-color: var(--border); color: var(--accent); }
+  .panel-action-btn:active { transform: scale(0.9); }
+  .panel-action-btn.disabled { opacity: 0.3; pointer-events: none; }
+
+  .panel-body { flex: 1; padding: 0; position: relative; }
+  .panel textarea,
+  .panel .output-text {
+    width: 100%; height: 100%; min-height: 240px;
+    padding: 20px; border: none; background: transparent;
+    color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem; line-height: 1.7; resize: none;
+  }
+  .panel textarea {
+    outline: none; cursor: text;
+  }
+  .panel textarea::placeholder { color: var(--text-muted); font-style: italic; }
+  .panel .output-text {
+    overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+  }
+  .panel .output-text.empty { color: var(--text-muted); font-style: italic; font-weight: 400; }
+
+  .panel-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-top: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .char-count {
+    font-size: 0.72rem; color: var(--text-muted);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .char-count .current { color: var(--text-secondary); font-weight: 600; }
+  .char-count.warn .current { color: var(--warning); }
+  .char-count.danger .current { color: var(--error); }
+
+  .clear-btn {
+    font-size: 0.72rem; color: var(--text-muted); background: transparent;
+    border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; padding: 4px 8px; border-radius: 4px;
+    transition: var(--transition);
+  }
+  .clear-btn:hover { color: var(--error); background: rgba(248,113,113,0.1); }
+
+  /* Translate button */
+  .translate-row {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+  }
+  .translate-btn {
+    flex: 1; padding: 18px 32px; border: none; border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--accent), #c4922e);
+    color: var(--bg-primary); font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px;
+    cursor: pointer; transition: var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: var(--shadow-accent); position: relative; overflow: hidden;
+  }
+  .translate-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%); transition: 0.5s;
+  }
+  .translate-btn:hover::before { transform: translateX(100%); }
+  .translate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(212,162,78,0.3); }
+  .translate-btn:active { transform: translateY(0) scale(0.98); }
+  .translate-btn:disabled {
+    opacity: 0.4; cursor: not-allowed; transform: none !important;
+    box-shadow: none !important;
+  }
+  .translate-btn:disabled::before { display: none; }
+
+  .translate-btn .spinner {
+    width: 20px; height: 20px; border: 2.5px solid rgba(14,15,17,0.3);
+    border-top-color: var(--bg-primary); border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  .translate-btn.loading .spinner { display: block; }
+  .translate-btn.loading .btn-text { display: none; }
+  .translate-btn.loading .btn-loading-text { display: inline; }
+  .btn-loading-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Auto-detect toggle */
+  .auto-detect {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; background: var(--bg-card);
+    border: 1.5px solid var(--border); border-radius: var(--radius-md);
+    cursor: pointer; transition: var(--transition); flex-shrink: 0;
+    user-select: none;
+  }
+  .auto-detect:hover { border-color: var(--text-muted); }
+  .auto-detect.active { border-color: var(--accent); background: var(--accent-dim); }
+  .toggle-track {
+    width: 38px; height: 22px; border-radius: 11px;
+    background: var(--border); position: relative; transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .toggle-track::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-muted); transition: var(--transition);
+  }
+  .auto-detect.active .toggle-track { background: var(--accent); }
+  .auto-detect.active .toggle-track::after { transform: translateX(16px); background: var(--bg-primary); }
+  .auto-detect-label {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* History section */
+  .history-section {
+    margin-top: auto; padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem; font-weight: 600; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title i { color: var(--accent); font-size: 0.85rem; }
+  .clear-history-btn {
+    font-size: 0.75rem; color: var(--text-muted); background: transparent;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; transition: var(--transition);
+  }
+  .clear-history-btn:hover { color: var(--error); border-color: var(--error); background: rgba(248,113,113,0.06); }
+
+  .history-list {
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 260px; overflow-y: auto;
+  }
+  .history-list::-webkit-scrollbar { width: 5px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .history-item {
+    display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px;
+    align-items: center; padding: 14px 18px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); cursor: pointer;
+    transition: var(--transition);
+  }
+  .history-item:hover { border-color: var(--accent); background: var(--accent-dim); transform: translateX(4px); }
+  .history-source, .history-target {
+    font-size: 0.85rem; line-height: 1.5; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .history-source { color: var(--text-secondary); }
+  .history-target { color: var(--text-primary); font-weight: 500; text-align: right; }
+  .history-arrow { color: var(--accent); font-size: 0.7rem; flex-shrink: 0; }
+  .history-use-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); font-size: 0.7rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); flex-shrink: 0;
+  }
+  .history-use-btn:hover { background: var(--accent); color: var(--bg-primary); border-color: var(--accent); }
+
+  .history-empty {
+    text-align: center; padding: 32px; color: var(--text-muted);
+    font-size: 0.85rem; font-style: italic;
+  }
+
+  /* Toast notifications */
+  .toast-container {
+    position: fixed; top: 24px; right: 24px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    padding: 14px 20px; border-radius: var(--radius-sm);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    color: var(--text-primary); font-size: 0.85rem; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: var(--shadow-lg); transform: translateX(120%);
+    animation: toastIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    min-width: 260px; max-width: 380px;
+  }
+  .toast.out { animation: toastOut 0.3s ease-in forwards; }
+  .toast i { font-size: 1rem; flex-shrink: 0; }
+  .toast.success i { color: var(--success); }
+  .toast.error i { color: var(--error); }
+  .toast.info i { color: var(--accent); }
+
+  @keyframes toastIn { to { transform: translateX(0); } }
+  @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+  /* Keyboard shortcut hint */
+  .shortcut-hint {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    padding: 8px 18px; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 0.72rem; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px; z-index: 10;
+    opacity: 0.7; transition: var(--transition);
+  }
+  .shortcut-hint:hover { opacity: 1; }
+  .shortcut-hint kbd {
+    padding: 2px 7px; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 4px; font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
+  }
+
+  /* Typing animation for output */
+  .typing-cursor {
+    display: inline-block; width: 2px; height: 1.1em;
+    background: var(--accent); margin-left: 2px;
+    animation: blink 0.8s step-end infinite; vertical-align: text-bottom;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Detected language badge */
+  .detected-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; background: var(--accent-dim);
+    border: 1px solid rgba(212,162,78,0.2); border-radius: 20px;
+    font-size: 0.7rem; color: var(--accent); font-weight: 600;
+    margin-left: 8px;
+  }
+
+  /* Scrollbar for textarea */
+  .panel textarea::-webkit-scrollbar,
+  .panel .output-text::-webkit-scrollbar { width: 5px; }
+  .panel textarea::-webkit-scrollbar-track,
+  .panel .output-text::-webkit-scrollbar-track { background: transparent; }
+  .panel textarea::-webkit-scrollbar-thumb,
+  .panel .output-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Focus visible */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .panel textarea:focus-visible { outline: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .app-container { padding: 20px 14px 80px; }
+    .logo-text { font-size: 1.3rem; }
+    .lang-bar { gap: 8px; }
+    .swap-btn { margin-top: 18px; width: 44px; height: 44px; font-size: 0.95rem; }
+    .translate-row { flex-direction: column; }
+    .auto-detect { width: 100%; justify-content: center; }
+    .history-item { grid-template-columns: 1fr; gap: 6px; }
+    .history-arrow { display: none; }
+    .history-target { text-align: left; }
+    .history-use-btn { display: none; }
+    .shortcut-hint { display: none; }
+    .panel textarea, .panel .output-text { min-height: 180px; font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-layer" aria-hidden="true">
+  <div class="bg-blob"></div>
+  <div class="bg-blob"></div>
+  <div class="bg-blob"></div>
+  <div class="bg-grid"></div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<div class="app-container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-icon" aria-hidden="true"><i class="fas fa-language"></i></div>
+      <div>
+        <div class="logo-text">Lingua<span>Flow</span></div>
+        <div class="logo-tagline">Professional Translation</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="statTranslations">0</div>
+        <div class="stat-label">Translated</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statChars">0</div>
+        <div class="stat-label">Characters</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Language selector bar -->
+  <div class="lang-bar">
+    <div class="lang-select-wrapper">
+      <label for="sourceLang">Source Language</label>
+      <select id="sourceLang" class="lang-select" aria-label="Source language">
+        <option value="auto">Auto Detect</option>
+        <option value="en" selected>English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="ru">Russian</option>
+        <option value="zh">Chinese (Simplified)</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="ar">Arabic</option>
+        <option value="hi">Hindi</option>
+        <option value="tr">Turkish</option>
+        <option value="nl">Dutch</option>
+        <option value="pl">Polish</option>
+        <option value="sv">Swedish</option>
+        <option value="da">Danish</option>
+        <option value="no">Norwegian</option>
+        <option value="fi">Finnish</option>
+        <option value="el">Greek</option>
+        <option value="cs">Czech</option>
+        <option value="ro">Romanian</option>
+        <option value="hu">Hungarian</option>
+        <option value="uk">Ukrainian</option>
+        <option value="th">Thai</option>
+        <option value="vi">Vietnamese</option>
+        <option value="id">Indonesian</option>
+        <option value="ms">Malay</option>
+        <option value="he">Hebrew</option>
+        <option value="bg">Bulgarian</option>
+        <option value="hr">Croatian</option>
+        <option value="sk">Slovak</option>
+        <option value="sl">Slovenian</option>
+        <option value="lt">Lithuanian</option>
+        <option value="lv">Latvian</option>
+        <option value="et">Estonian</option>
+      </select>
+    </div>
+
+    <button class="swap-btn" id="swapBtn" aria-label="Swap languages" title="Swap languages">
+      <i class="fas fa-right-left"></i>
+    </button>
+
+    <div class="lang-select-wrapper">
+      <label for="targetLang">Target Language</label>
+      <select id="targetLang" class="lang-select" aria-label="Target language">
+        <option value="es" selected>Spanish</option>
+        <option value="en">English</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="ru">Russian</option>
+        <option value="zh">Chinese (Simplified)</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="ar">Arabic</option>
+        <option value="hi">Hindi</option>
+        <option value="tr">Turkish</option>
+        <option value="nl">Dutch</option>
+        <option value="pl">Polish</option>
+        <option value="sv">Swedish</option>
+        <option value="da">Danish</option>
+        <option value="no">Norwegian</option>
+        <option value="fi">Finnish</option>
+        <option value="el">Greek</option>
+        <option value="cs">Czech</option>
+        <option value="ro">Romanian</option>
+        <option value="hu">Hungarian</option>
+        <option value="uk">Ukrainian</option>
+        <option value="th">Thai</option>
+        <option value="vi">Vietnamese</option>
+        <option value="id">Indonesian</option>
+        <option value="ms">Malay</option>
+        <option value="he">Hebrew</option>
+        <option value="bg">Bulgarian</option>
+        <option value="hr">Croatian</option>
+        <option value="sk">Slovak</option>
+        <option value="sl">Slovenian</option>
+        <option value="lt">Lithuanian</option>
+        <option value="lv">Latvian</option>
+        <option value="et">Estonian</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Translation panels -->
+  <div class="panels">
+    <!-- Input panel -->
+    <div class="panel input-panel">
+      <div class="panel-header">
+        <div class="panel-label">
+          <div class="dot idle" id="inputDot"></div>
+          <span>Source Text</span>
+          <span class="detected-badge" id="detectedBadge" style="display:none;"></span>
+        </div>
+        <div class="panel-actions">
+          <button class="panel-action-btn" id="pasteBtn" title="Paste from clipboard" aria-label="Paste from clipboard">
+            <i class="fas fa-paste"></i>
+          </button>
+          <button class="panel-action-btn" id="speakSourceBtn" title="Listen to source text" aria-label="Listen to source text">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <textarea
+          id="sourceText"
+          placeholder="Type or paste your text here..."
+          aria-label="Source text input"
+          spellcheck="false"
+          maxlength="5000"
+        ></textarea>
+      </div>
+      <div class="panel-footer">
+        <div class="char-count" id="charCount">
+          <span class="current">0</span> / 5000
+        </div>
+        <button class="clear-btn" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <!-- Output panel -->
+    <div class="panel output-panel">
+      <div class="panel-header">
+        <div class="panel-label">
+          <div class="dot idle" id="outputDot"></div>
+          <span>Translation</span>
+        </div>
+        <div class="panel-actions">
+          <button class="panel-action-btn disabled" id="copyBtn" title="Copy translation" aria-label="Copy translation">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="panel-action-btn disabled" id="speakTargetBtn" title="Listen to translation" aria-label="Listen to translation">
+            <i class="fas fa-volume-up"></i>
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="output-text empty" id="outputText" aria-live="polite">Translation will appear here...</div>
+      </div>
+      <div class="panel-footer">
+        <div class="char-count" id="outputCharCount">
+          <span class="current">0</span> characters
+        </div>
+        <button class="clear-btn" id="clearOutputBtn" style="visibility:hidden;">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translate button row -->
+  <div class="translate-row">
+    <button class="translate-btn" id="translateBtn" disabled>
+      <span class="btn-text"><i class="fas fa-bolt"></i> Translate Now</span>
+      <span class="btn-loading-text">Translating...</span>
+      <div class="spinner"></div>
+    </button>
+    <div class="auto-detect" id="autoDetectToggle" role="switch" aria-checked="false" aria-label="Auto-detect language" tabindex="0">
+      <div class="toggle-track"></div>
+      <span class="auto-detect-label">Auto-detect</span>
+    </div>
+  </div>
+
+  <!-- History section -->
+  <section class="history-section" aria-label="Translation history">
+    <div class="section-header">
+      <div class="section-title"><i class="fas fa-clock-rotate-left"></i> Recent Translations</div>
+      <button class="clear-history-btn" id="clearHistoryBtn">Clear All</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" id="historyEmpty">No translations yet. Start by entering some text above.</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Keyboard shortcut hint -->
+<div class="shortcut-hint" aria-hidden="true">
+  Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to translate
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- DOM References ---
+  const sourceText = document.getElementById('sourceText');
+  const outputText = document.getElementById('outputText');
+  const sourceLang = document.getElementById('sourceLang');
+  const targetLang = document.getElementById('targetLang');
+  const translateBtn = document.getElementById('translateBtn');
+  const swapBtn = document.getElementById('swapBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const clearOutputBtn = document.getElementById('clearOutputBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const pasteBtn = document.getElementById('pasteBtn');
+  const speakSourceBtn = document.getElementById('speakSourceBtn');
+  const speakTargetBtn = document.getElementById('speakTargetBtn');
+  const charCount = document.getElementById('charCount');
+  const outputCharCount = document.getElementById('outputCharCount');
+  const inputDot = document.getElementById('inputDot');
+  const outputDot = document.getElementById('outputDot');
+  const detectedBadge = document.getElementById('detectedBadge');
+  const autoDetectToggle = document.getElementById('autoDetectToggle');
+  const historyList = document.getElementById('historyList');
+  const historyEmpty = document.getElementById('historyEmpty');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  const statTranslations = document.getElementById('statTranslations');
+  const statChars = document.getElementById('statChars');
+  const toastContainer = document.getElementById('toastContainer');
+
+  // --- State ---
+  let translationCount = 0;
+  let totalChars = 0;
+  let history = [];
+  let isTranslating = false;
+  let currentTranslation = '';
+  let detectedLangCode = '';
+
+  // Language name map for display
+  const langNames = {
+    auto: 'Auto Detect', en: 'English', es: 'Spanish', fr: 'French',
+    de: 'German', it: 'Italian', pt: 'Portuguese', ru: 'Russian',
+    zh: 'Chinese', ja: 'Japanese', ko: 'Korean', ar: 'Arabic',
+    hi: 'Hindi', tr: 'Turkish', nl: 'Dutch', pl: 'Polish',
+    sv: 'Swedish', da: 'Danish', no: 'Norwegian', fi: 'Finnish',
+    el: 'Greek', cs: 'Czech', ro: 'Romanian', hu: 'Hungarian',
+    uk: 'Ukrainian', th: 'Thai', vi: 'Vietnamese', id: 'Indonesian',
+    ms: 'Malay', he: 'Hebrew', bg: 'Bulgarian', hr: 'Croatian',
+    sk: 'Slovak', sl: 'Slovenian', lt: 'Lithuanian', lv: 'Latvian',
+    et: 'Estonian'
+  };
+
+  // --- Toast System ---
+  function showToast(message, type) {
+    type = type || 'info';
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = '<i class="fas ' + icons[type] + '"></i><span>' + message + '</span>';
+    toastContainer.appendChild(toast);
+    setTimeout(function() {
+      toast.classList.add('out');
+      setTimeout(function() { toast.remove(); }, 300);
+    }, 3000);
+  }
+
+  // --- Character Count ---
+  function updateCharCount() {
+    var len = sourceText.value.length;
+    var currentSpan = charCount.querySelector('.current');
+    currentSpan.textContent = len;
+    charCount.className = 'char-count';
+    if (len > 4500) charCount.classList.add('danger');
+    else if (len > 3500) charCount.classList.add('warn');
+
+    // Enable/disable translate button
+    translateBtn.disabled = len === 0 || isTranslating;
+  }
+
+  sourceText.addEventListener('input', updateCharCount);
+
+  // --- Auto-Detect Toggle ---
+  autoDetectToggle.addEventListener('click', function() {
+    var isActive = this.classList.toggle('active');
+    this.setAttribute('aria-checked', isActive);
+    if (isActive) {
+      sourceLang.value = 'auto';
+      sourceLang.disabled = true;
+      sourceLang.style.opacity = '0.5';
+      showToast('Auto-detect enabled', 'info');
+    } else {
+      sourceLang.disabled = false;
+      sourceLang.style.opacity = '1';
+      sourceLang.value = 'en';
+      detectedBadge.style.display = 'none';
+      detectedLangCode = '';
+    }
+  });
+  autoDetectToggle.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+  });
+
+  // Sync source lang dropdown with auto-detect toggle
+  sourceLang.addEventListener('change', function() {
+    if (this.value !== 'auto') {
+      autoDetectToggle.classList.remove('active');
+      autoDetectToggle.setAttribute('aria-checked', 'false');
+      sourceLang.disabled = false;
+      sourceLang.style.opacity = '1';
+      detectedBadge.style.display = 'none';
+      detectedLangCode = '';
+    }
+  });
+
+  // --- Swap Languages ---
+  swapBtn.addEventListener('click', function() {
+    var srcVal = sourceLang.value;
+    var tgtVal = targetLang.value;
+
+    // If auto-detect is on, disable it
+    if (srcVal === 'auto') {
+      autoDetectToggle.classList.remove('active');
+      autoDetectToggle.setAttribute('aria-checked', 'false');
+      sourceLang.disabled = false;
+      sourceLang.style.opacity = '1';
+      detectedBadge.style.display = 'none';
+      srcVal = detectedLangCode || 'en';
+    }
+
+    sourceLang.value = tgtVal;
+    targetLang.value = srcVal;
+
+    // Also swap text content
+    if (currentTranslation) {
+      var temp = sourceText.value;
+      sourceText.value = currentTranslation;
+      currentTranslation = temp;
+      outputText.textContent = currentTranslation || 'Translation will appear here...';
+      outputText.className = 'output-text' + (currentTranslation ? '' : ' empty');
+      updateCharCount();
+      updateOutputCharCount();
+      updateActionButtons();
+    }
+
+    showToast('Languages swapped', 'info');
+  });
+
+  // --- Clear ---
+  clearBtn.addEventListener('click', function() {
+    sourceText.value = '';
+    currentTranslation = '';
+    outputText.textContent = 'Translation will appear here...';
+    outputText.className = 'output-text empty';
+    detectedBadge.style.display = 'none';
+    detectedLangCode = '';
+    updateCharCount();
+    updateOutputCharCount();
+    updateActionButtons();
+    inputDot.classList.add('idle');
+    outputDot.classList.add('idle');
+    sourceText.focus();
+  });
+
+  clearOutputBtn.addEventListener('click', function() {
+    currentTranslation = '';
+    outputText.textContent = 'Translation will appear here...';
+    outputText.className = 'output-text empty';
+    updateOutputCharCount();
+    updateActionButtons();
+    outputDot.classList.add('idle');
+  });
+
+  // --- Paste ---
+  pasteBtn.addEventListener('click', function() {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function(text) {
+        sourceText.value = text;
+        updateCharCount();
+        showToast('Text pasted from clipboard', 'success');
+      }).catch(function() {
+        showToast('Unable to access clipboard', 'error');
+      });
+    } else {
+      showToast('Clipboard API not available', 'error');
+    }
+  });
+
+  // --- Copy ---
+  copyBtn.addEventListener('click', function() {
+    if (!currentTranslation) return;
+    navigator.clipboard.writeText(currentTranslation).then(function() {
+      showToast('Translation copied to clipboard', 'success');
+      // Brief visual feedback
+      var icon = copyBtn.querySelector('i');
+      icon.className = 'fas fa-check';
+      setTimeout(function() { icon.className = 'fas fa-copy'; }, 1500);
+    }).catch(function() {
+      // Fallback
+      var ta = document.createElement('textarea');
+      ta.value = currentTranslation;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Translation copied to clipboard', 'success');
+    });
+  });
+
+  // --- Text-to-Speech ---
+  function speak(text, lang) {
+    if (!('speechSynthesis' in window)) {
+      showToast('Text-to-speech not supported in this browser', 'error');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+
+    // Try to find a matching voice
+    var voices = window.speechSynthesis.getVoices();
+    var match = voices.find(function(v) { return v.lang.startsWith(lang); });
+    if (match) utterance.voice = match;
+
+    utterance.onstart = function() { showToast('Speaking...', 'info'); };
+    utterance.onerror = function() { showToast('Speech error occurred', 'error'); };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Load voices
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = function() {
+      window.speechSynthesis.getVoices();
+    };
+  }
+
+  speakSourceBtn.addEventListener('click', function() {
+    if (!sourceText.value.trim()) { showToast('No source text to speak', 'error'); return; }
+    var lang = sourceLang.value === 'auto' ? (detectedLangCode || 'en') : sourceLang.value;
+    speak(sourceText.value, lang);
+  });
+
+  speakTargetBtn.addEventListener('click', function() {
+    if (!currentTranslation) { showToast('No translation to speak', 'error'); return; }
+    speak(currentTranslation, targetLang.value);
+  });
+
+  // --- Update action button states ---
+  function updateActionButtons() {
+    if (currentTranslation) {
+      copyBtn.classList.remove('disabled');
+      speakTargetBtn.classList.remove('disabled');
+      clearOutputBtn.style.visibility = 'visible';
+    } else {
+      copyBtn.classList.add('disabled');
+      speakTargetBtn.classList.add('disabled');
+      clearOutputBtn.style.visibility = 'hidden';
+    }
+  }
+
+  function updateOutputCharCount() {
+    var len = (currentTranslation || '').length;
+    outputCharCount.querySelector('.current').textContent = len;
+  }
+
+  // --- Translate ---
+  async function translate() {
+    var text = sourceText.value.trim();
+    if (!text || isTranslating) return;
+
+    var src = sourceLang.value;
+    var tgt = targetLang.value;
+
+    if (src === tgt) {
+      showToast('Source and target languages are the same', 'error');
+      return;
+    }
+
+    isTranslating = true;
+    translateBtn.classList.add('loading');
+    translateBtn.disabled = true;
+    inputDot.classList.remove('idle');
+    outputDot.classList.remove('idle');
+
+    try {
+      var langPair = src + '|' + tgt;
+      var url = 'https://api.mymemory.translated.net/get?q=' +
+        encodeURIComponent(text) + '&langpair=' + encodeURIComponent(langPair) +
+        '&de=linguaflow@tool.com';
+
+      var response = await fetch(url);
+      if (!response.ok) throw new Error('API request failed with status ' + response.status);
+
+      var data = await response.json();
+
+      if (data.responseStatus === 200 && data.responseData) {
+        currentTranslation = data.responseData.translatedText;
+
+        // Typing animation
+        await typeOutput(currentTranslation);
+
+        // Handle detected language
+        if (src === 'auto' && data.responseData.detectedLanguage) {
+          detectedLangCode = data.responseData.detectedLanguage;
+          var detectedName = langNames[detectedLangCode] || detectedLangCode.toUpperCase();
+          detectedBadge.textContent = detectedName;
+          detectedBadge.style.display = 'inline-flex';
+        }
+
+        // Update stats
+        translationCount++;
+        totalChars += text.length;
+        statTranslations.textContent = translationCount;
+        statChars.textContent = totalChars > 999 ? (totalChars / 1000).toFixed(1) + 'k' : totalChars;
+
+        // Add to history
+        addHistory(text, currentTranslation, src === 'auto' ? (detectedLangCode || 'en') : src, tgt);
+
+        updateOutputCharCount();
+        updateActionButtons();
+        showToast('Translation complete', 'success');
+      } else {
+        throw new Error(data.responseDetails || 'Translation failed');
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+      outputText.textContent = 'Translation failed. Please try again.';
+      outputText.className = 'output-text';
+      showToast('Translation error: ' + err.message, 'error');
+      outputDot.classList.add('idle');
+    } finally {
+      isTranslating = false;
+      translateBtn.classList.remove('loading');
+      translateBtn.disabled = sourceText.value.trim().length === 0;
+      inputDot.classList.add('idle');
+    }
+  }
+
+  // Typing animation for output
+  function typeOutput(text) {
+    return new Promise(function(resolve) {
+      outputText.className = 'output-text';
+      outputText.innerHTML = '';
+      var i = 0;
+      var cursor = document.createElement('span');
+      cursor.className = 'typing-cursor';
+
+      // Speed based on length
+      var speed = Math.max(8, Math.min(30, 2000 / text.length));
+
+      function type() {
+        if (i < text.length) {
+          outputText.textContent = text.substring(0, i + 1);
+          outputText.appendChild(cursor);
+          i++;
+          setTimeout(type, speed);
+        } else {
+          cursor.remove();
+          resolve();
+        }
+      }
+      type();
+    });
+  }
+
+  translateBtn.addEventListener('click', translate);
+
+  // --- Keyboard Shortcut: Ctrl+Enter ---
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!translateBtn.disabled) translate();
+    }
+  });
+
+  // Also translate on Enter in textarea (if not shift+enter for newline)
+  sourceText.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      // Only auto-translate for single-line or short text
+      // For multiline, let Enter create newlines
+    }
+  });
+
+  // --- History ---
+  function addHistory(source, target, srcLang, tgtLang) {
+    var item = {
+      source: source,
+      target: target,
+      srcLang: srcLang,
+      tgtLang: tgtLang,
+      time: Date.now()
+    };
+    history.unshift(item);
+    if (history.length > 20) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (history.length === 0) {
+      historyList.innerHTML = '<div class="history-empty" id="historyEmpty">No translations yet. Start by entering some text above.</div>';
+      return;
+    }
+
+    historyList.innerHTML = '';
+    history.forEach(function(item, index) {
+      var div = document.createElement('div');
+      div.className = 'history-item';
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('aria-label', 'Use this translation: ' + item.source.substring(0, 50));
+
+      var srcLabel = langNames[item.srcLang] || item.srcLang;
+      var tgtLabel = langNames[item.tgtLang] || item.tgtLang;
+
+      div.innerHTML =
+        '<div class="history-source" title="' + escapeHtml(item.source) + '">[' + srcLabel + '] ' + escapeHtml(item.source) + '</div>' +
+        '<div class="history-arrow"><i class="fas fa-arrow-right"></i></div>' +
+        '<div class="history-target" title="' + escapeHtml(item.target) + '">[' + tgtLabel + '] ' + escapeHtml(item.target) + '</div>' +
+        '<button class="history-use-btn" title="Use this translation" aria-label="Use this translation"><i class="fas fa-arrow-rotate-left"></i></button>';
+
+      // Click to reuse
+      div.addEventListener('click', function(e) {
+        if (e.target.closest('.history-use-btn')) return;
+        sourceText.value = item.source;
+        currentTranslation = item.target;
+        outputText.textContent = currentTranslation;
+        outputText.className = 'output-text';
+        sourceLang.value = item.srcLang;
+        targetLang.value = item.tgtLang;
+        updateCharCount();
+        updateOutputCharCount();
+        updateActionButtons();
+        showToast('Translation loaded from history', 'info');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      div.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); div.click(); }
+      });
+
+      // Use button: set as source for re-translation
+      var useBtn = div.querySelector('.history-use-btn');
+      useBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        sourceText.value = item.target;
+        sourceLang.value = item.tgtLang;
+        targetLang.value = item.srcLang;
+        currentTranslation = '';
+        outputText.textContent = 'Translation will appear here...';
+        outputText.className = 'output-text empty';
+        updateCharCount();
+        updateOutputCharCount();
+        updateActionButtons();
+        showToast('Translation set as source for re-translation', 'info');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        sourceText.focus();
+      });
+
+      historyList.appendChild(div);
+    });
+  }
+
+  clearHistoryBtn.addEventListener('click', function() {
+    history = [];
+    translationCount = 0;
+    totalChars = 0;
+    statTranslations.textContent = '0';
+    statChars.textContent = '0';
+    renderHistory();
+    showToast('History cleared', 'info');
+  });
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // --- Initialize ---
+  updateCharCount();
+  updateOutputCharCount();
+  updateActionButtons();
+  renderHistory();
+
+  // Subtle entrance animation for panels
+  document.querySelectorAll('.panel').forEach(function(panel, i) {
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(20px)';
+    panel.style.transition = 'opacity 0.6s ease ' + (i * 0.12) + 's, transform 0.6s ease ' + (i * 0.12) + 's';
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        panel.style.opacity = '1';
+        panel.style.transform = 'translateY(0)';
+      });
+    });
+  });
+
+  // Animate other elements
+  document.querySelector('.lang-bar').style.opacity = '0';
+  document.querySelector('.lang-bar').style.transform = 'translateY(15px)';
+  document.querySelector('.lang-bar').style.transition = 'opacity 0.5s ease 0.05s, transform 0.5s ease 0.05s';
+
+  document.querySelector('.translate-row').style.opacity = '0';
+  document.querySelector('.translate-row').style.transform = 'translateY(15px)';
+  document.querySelector('.translate-row').style.transition = 'opacity 0.5s ease 0.25s, transform 0.5s ease 0.25s';
+
+  document.querySelector('.history-section').style.opacity = '0';
+  document.querySelector('.history-section').style.transform = 'translateY(15px)';
+  document.querySelector('.history-section').style.transition = 'opacity 0.5s ease 0.35s, transform 0.5s ease 0.35s';
+
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      document.querySelector('.lang-bar').style.opacity = '1';
+      document.querySelector('.lang-bar').style.transform = 'translateY(0)';
+      document.querySelector('.translate-row').style.opacity = '1';
+      document.querySelector('.translate-row').style.transform = 'translateY(0)';
+      document.querySelector('.history-section').style.opacity = '1';
+      document.querySelector('.history-section').style.transform = 'translateY(0)';
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
